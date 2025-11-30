@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Профиль</title>
+</head>
+<body>
+    <h1>Профиль пользователя: {{ user.username }}</h1>
+
+    <p>
+        <a href="{{url_for('add_steps')}}">Добавить шаги</a> |
+        <a href="{{url_for('me')}}">Все мои данные</a> |
+        <a href="{{url_for('week_stats')}}">Среднее за неделю</a> |
+        <a href="{{url_for('month_stats')}}">Среднее за месяц</a>
+    </p>
+
+    <p>
+        <a href="{{url_for('logout')}}">Выйти</a>
+    </p>
+</body>
+</html>

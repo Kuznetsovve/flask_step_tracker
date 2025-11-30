@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template
 from flask_wtf import FlaskForm
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from wtforms import StringField, TextAreaField, SubmitField, PasswordField, BooleanField
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, IntegerField
 from wtforms.validators import DataRequired, Length, EqualTo
 from flask_login import LoginManager, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -75,6 +76,11 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Войти")
 
 
+class StepsForm(FlaskForm):
+    steps = IntegerField('Шаги', validators=[DataRequired()])
+    submit = SubmitField("Сохранить")
+
+
 with app.app_context():
     db.create_all()
 
@@ -85,7 +91,7 @@ def home_page():
 @app.route('/registration', methods= ['GET', 'POST'])
 def registration():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('profile'))
     form = RegistrationForm()
 
     if form.validate_on_submit():
@@ -96,7 +102,7 @@ def registration():
         db.session.commit()
         flash('Регистрация прошла успешно!', 'alert-success')
 
-        return redirect(url_for('login'))
+        return redirect(url_for('add_steps'))
     
     return render_template(template_name_or_list="registration.html", 
                        form=form)
@@ -104,7 +110,7 @@ def registration():
 @app.route('/login', methods= ['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('profile'))
     
     form = LoginForm()
     steps = Steps.query.all()
@@ -115,17 +121,88 @@ def login():
         if user and user.check_password(form.password.data): # пароль совпал
             login_user(user)
             flash('Вход выполнен!', 'alert-success')
-            return("profile")
+            return redirect(url_for('profile'))
         else:
             flash('Вход не выполнен!', 'alert-danger')
 
     return render_template(template_name_or_list="login.html", 
                        form=form, steps=steps)
 
+@app.route('/add_steps', methods=['GET', 'POST'])
+@login_required
+def add_steps():
+    form = StepsForm()
+    if form.validate_on_submit():
+        step = Steps(steps=form.steps.data, user_id=current_user.id)
+        db.session.add(step)
+        db.session.commit()
+        flash('Шаги сохранены!', 'alert-success')
+        return redirect(url_for('profile'))
+    return render_template('add_steps.html', form=form)
+
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template("profile.html")
+    return render_template("profile.html", user=current_user)
+
+@app.route('/me')
+@login_required
+def me():
+    user_steps = Steps.query.filter_by(user_id=current_user.id).all()
+    return render_template('me.html', steps=user_steps, user=current_user)
+
+@app.route('/me/weeek')
+@login_required
+def week_stats():
+    today = datetime.utcnow()
+    week_start = today - timedelta(days=today.weekday(), weeks=0)
+    week_end = week_start + timedelta(days=6)
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        Steps.datetime >= week_start,
+        Steps.datetime <= week_end
+    ).scalar() or 0
+    return render_template('stats.html', avg=avg_steps, period='Текущая неделя')
+
+@app.route('/me/weeek/<int:n>')
+@login_required
+def week_n_stats(n):
+    year_start = datetime(datetime.now().year, 1, 1)
+    week_start = year_start + timedelta(weeks=n-1)
+    week_end = week_start + timedelta(days=6)
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        Steps.datetime >= week_start,
+        Steps.datetime <= week_end
+    ).scalar() or 0
+    return render_template('stats.html', avg=avg_steps, period=f'Неделя {n}')
+
+@app.route('/me/month')
+@login_required
+def month_stats():
+    today = datetime.utcnow()
+    month_start = today.replace(day=1)
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('year', Steps.datetime) == today.year,
+        func.extract('month', Steps.datetime) == today.month
+    ).scalar() or 0
+    return render_template('stats.html', avg=avg_steps, period='Текущий месяц')
+
+@app.route('/me/month/<int:n>')
+@login_required
+def month_n_stats(n):
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('month', Steps.datetime) == n
+    ).scalar() or 0
+    return render_template('stats.html', avg=avg_steps, period=f'Месяц {n}')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home_page'))
 
 if __name__ == '__main__':
     app.run()

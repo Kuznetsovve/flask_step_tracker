@@ -1,0 +1,33 @@
+{# templates/add_steps.html #}
+
+<div class="container mt-4">
+    <h2>Добавить шаги</h2>
+
+    {# вывод флеш-сообщений (если используешь) #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ category }} mt-2">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('add_steps') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+            {{ form.steps.label(class="form-label") }}
+            {{ form.steps(class="form-control", placeholder="Введите количество шагов") }}
+            {% for error in form.steps.errors %}
+                <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary ms-2">Назад в профиль</a>
+        </div>
+    </form>
+</div>

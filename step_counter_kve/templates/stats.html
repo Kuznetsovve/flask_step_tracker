@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Статистика</title>
+</head>
+<body>
+    <h1>Статистика шагов</h1>
+
+    <p>Период: {{ period }}</p>
+    <p>Среднее количество шагов: {{ "%.0f"|format(avg) }}</p>
+
+    <p>
+        <a href="{{ url_for('profile') }}">Профиль</a> |
+        <a href="{{ url_for('me') }}">Все данные</a> |
+        <a href="{{ url_for('week_stats') }}">Текущая неделя</a> |
+        <a href="{{ url_for('month_stats') }}">Текущий месяц</a>
+    </p>
+</body>
+</html>

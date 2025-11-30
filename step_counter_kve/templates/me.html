@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Мои данные</title>
+</head>
+<body>
+    <h1>Все мои шаги</h1>
+
+    <p>
+        <a href="{{ url_for('profile') }}">Профиль</a> |
+        <a href="{{ url_for('weeek_stats') }}">Среднее за текущую неделю</a> |
+        <a href="{{ url_for('month_stats') }}">Среднее за текущий месяц</a>
+    </p>
+
+    {% if steps %}
+        <table border="1" cellpadding="5">
+            <tr>
+                <th>Дата и время</th>
+                <th>Шаги</th>
+            </tr>
+            {% for s in steps %}
+            <tr>
+                <td>{{ s.datetime }}</td>
+                <td>{{ s.steps }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>Записей пока нет.</p>
+    {% endif %}
+</body>
+</html>
