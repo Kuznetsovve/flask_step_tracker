@@ -10,8 +10,10 @@
     <p>
         <a href="{{url_for('add_steps')}}">Добавить шаги</a> |
         <a href="{{url_for('me')}}">Все мои данные</a> |
-        <a href="{{url_for('week_stats')}}">Среднее за неделю</a> |
+        <a href="{{url_for('weeek_stats')}}">Среднее за неделю</a> |
         <a href="{{url_for('month_stats')}}">Среднее за месяц</a>
+        <a href="{{ url_for('quarter_stats') }}">Среднее за квартал</a> |
+        <a href="{{ url_for('year_stats') }}">Среднее за год</a>
     </p>
 
     <p>

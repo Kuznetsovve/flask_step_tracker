@@ -153,7 +153,7 @@ def me():
 
 @app.route('/me/weeek')
 @login_required
-def week_stats():
+def weeek_stats():
     today = datetime.utcnow()
     week_start = today - timedelta(days=today.weekday(), weeks=0)
     week_end = week_start + timedelta(days=6)
@@ -166,7 +166,7 @@ def week_stats():
 
 @app.route('/me/weeek/<int:n>')
 @login_required
-def week_n_stats(n):
+def weeek_n_stats(n):
     year_start = datetime(datetime.now().year, 1, 1)
     week_start = year_start + timedelta(weeks=n-1)
     week_end = week_start + timedelta(days=6)
@@ -181,7 +181,6 @@ def week_n_stats(n):
 @login_required
 def month_stats():
     today = datetime.utcnow()
-    month_start = today.replace(day=1)
     avg_steps = db.session.query(func.avg(Steps.steps)).filter(
         Steps.user_id == current_user.id,
         func.extract('year', Steps.datetime) == today.year,
@@ -197,6 +196,65 @@ def month_n_stats(n):
         func.extract('month', Steps.datetime) == n
     ).scalar() or 0
     return render_template('stats.html', avg=avg_steps, period=f'Месяц {n}')
+
+from datetime import datetime
+from sqlalchemy import func
+
+@app.route('/me/quarter')
+@login_required
+def quarter_stats():
+    today = datetime.utcnow()
+    quarter = (today.month - 1) // 3 + 1
+
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('year', Steps.datetime) == today.year,
+        ((func.extract('month', Steps.datetime) - 1) // 3 + 1) == quarter
+    ).scalar() or 0
+
+    return render_template('stats.html', avg=avg_steps, period='Текущий квартал')
+
+@app.route('/me/quarter/<int:n>')
+@login_required
+def quarter_n_stats(n):
+    if n < 1 or n > 4:
+        flash('Квартал должен быть от 1 до 4', 'alert-danger')
+        return redirect(url_for('profile'))
+
+    today = datetime.utcnow()
+    year = today.year
+
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('year', Steps.datetime) == year,
+        ((func.extract('month', Steps.datetime) - 1) // 3 + 1) == n
+    ).scalar() or 0
+
+    return render_template('stats.html', avg=avg_steps, period=f'Квартал {n} {year} года')
+
+@app.route('/me/year')
+@login_required
+def year_stats():
+    today = datetime.utcnow()
+
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('year', Steps.datetime) == today.year
+    ).scalar() or 0
+
+    return render_template('stats.html', avg=avg_steps, period='Текущий год')
+
+@app.route('/me/year/<int:n>')
+@login_required
+def year_n_stats(n):
+    year = n
+
+    avg_steps = db.session.query(func.avg(Steps.steps)).filter(
+        Steps.user_id == current_user.id,
+        func.extract('year', Steps.datetime) == year
+    ).scalar() or 0
+
+    return render_template('stats.html', avg=avg_steps, period=f'Год {year}')
 
 @app.route('/logout')
 @login_required
